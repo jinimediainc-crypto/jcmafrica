@@ -3,227 +3,248 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TZ Trade Desk Pro</title>
+    <title>Indo-African Trade Arbitrage</title>
     <link rel="manifest" href="manifest.json">
     <style>
-        :root { --primary: #0f172a; --dark: #1e293b; --light: #f8f9fa; --accent: #2563eb; }
-        body { font-family: system-ui, -apple-system, sans-serif; padding: 15px; max-width: 750px; margin: auto; background: #f1f5f9; color: var(--dark); }
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px; border-top: 5px solid var(--accent); }
-        h1 { text-align: center; font-size: 1.8em; margin-bottom: 5px; color: var(--dark); }
-        h2 { font-size: 1.25em; margin-top: 0; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; color: var(--primary); display: flex; justify-content: space-between; }
-        label { display: block; margin-top: 14px; font-weight: 600; font-size: 0.88em; color: #475569; }
-        input, select, button { width: 100%; padding: 12px; margin-top: 6px; box-sizing: border-box; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 0.95em; }
-        input:focus, select:focus { outline: 2px solid var(--accent); border-color: transparent; }
+        :root { 
+            --primary: #0f172a; --dark: #1e293b; --light: #f8f9fa; 
+            --accent: #2563eb; --india: #ff9933; --africa: #00a859;
+            --success: #10b981; --danger: #ef4444; 
+        }
+        body { font-family: system-ui, -apple-system, sans-serif; padding: 15px; max-width: 800px; margin: auto; background: #e2e8f0; color: var(--dark); }
         
-        .currency-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 10px; }
-        .currency-box { background: var(--light); padding: 12px; border-radius: 8px; text-align: center; border: 1px solid #e2e8f0; }
-        .currency-box input { text-align: center; font-weight: bold; font-size: 1.1em; color: var(--accent); background: white; }
-        
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        
-        button.btn-calc { background: var(--accent); color: white; border: none; cursor: pointer; margin-top: 20px; font-weight: bold; font-size: 1.05em; transition: 0.2s; }
-        button.btn-calc:hover { background: #1d4ed8; }
-        button.btn-pdf { background: #10b981; color: white; border: none; cursor: pointer; margin-top: 15px; font-weight: bold; display: none; }
-        button.btn-pdf:hover { background: #059669; }
+        .header-title { text-align: center; font-size: 2em; margin-bottom: 5px; color: var(--primary); font-weight: 800; letter-spacing: -0.5px; }
+        .status { font-size: 0.85em; color: var(--success); text-align: center; margin-bottom: 20px; font-weight: 600; }
 
-        .invoice-sheet { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-top: 25px; display: none; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
-        .invoice-header { text-align: center; border-bottom: 2px dashed #cbd5e1; padding-bottom: 15px; margin-bottom: 15px; }
-        .timezones { font-size: 0.85em; color: #64748b; margin-top: 10px; display: flex; justify-content: space-around; background: #f8fafc; padding: 10px; border-radius: 6px; }
+        /* Unified Card Style */
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 20px; position: relative; overflow: hidden; }
+        .card::before { content: ''; position: absolute; top: 0; left: 0; width: 6px; height: 100%; background: var(--accent); }
+        .card.card-india::before { background: var(--india); }
+        .card.card-africa::before { background: var(--africa); }
         
-        .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; border: 1px solid #e2e8f0; }
-        .invoice-table { width: 100%; border-collapse: collapse; min-width: 600px; font-size: 0.9em; }
-        .invoice-table th, .invoice-table td { padding: 12px 15px; text-align: right; border-bottom: 1px solid #e2e8f0; }
-        .invoice-table th:first-child, .invoice-table td:first-child { text-align: left; }
-        .invoice-table th { background: #f1f5f9; font-weight: 700; color: #334155; text-transform: uppercase; font-size: 0.8em; letter-spacing: 0.5px; }
+        h2 { font-size: 1.2em; margin-top: 0; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; color: var(--primary); display: flex; align-items: center; gap: 8px; }
         
-        .row-highlight { background: #f8fafc; font-weight: 600; }
-        .invoice-total-row { font-size: 1.1em; font-weight: bold; color: white; background: var(--primary); }
-        .unit-row { background: #fffbeb; font-weight: 600; color: #b45309; }
-        .unit-row td { border-bottom: none; }
+        label { display: block; margin-top: 15px; font-weight: 600; font-size: 0.85em; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+        input, select, button { width: 100%; padding: 14px; margin-top: 6px; box-sizing: border-box; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 1em; font-weight: 500; background: #f8fafc; transition: 0.2s; }
+        input:focus, select:focus { outline: none; border-color: var(--accent); background: white; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
         
-        .status { font-size: 0.85em; color: #10b981; text-align: center; margin-bottom: 20px; font-weight: 600; }
+        /* Layout Grids */
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+        .grid-2-custom { display: grid; grid-template-columns: 2fr 1fr; gap: 10px; }
+        
+        .currency-box { background: white; padding: 15px; border-radius: 10px; text-align: center; border: 1px solid #e2e8f0; }
+        .currency-box input { text-align: center; font-weight: bold; font-size: 1.2em; color: var(--accent); border: none; background: transparent; padding: 5px; margin: 0; box-shadow: none; }
+        .currency-box input:focus { box-shadow: none; border-bottom: 2px solid var(--accent); border-radius: 0; }
+        
+        button.btn-calc { background: var(--primary); color: white; border: none; cursor: pointer; margin-top: 25px; font-weight: bold; font-size: 1.1em; padding: 16px; border-radius: 8px; }
+        button.btn-calc:hover { background: #334155; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        button.btn-pdf { background: var(--success); color: white; display: none; margin-top: 20px; }
+        
+        /* The Ledger/Dashboard */
+        .dashboard { background: white; border-radius: 12px; padding: 25px; margin-top: 25px; display: none; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); border-top: 6px solid var(--primary); }
+        .dash-header { text-align: center; margin-bottom: 25px; }
+        .dash-header h2 { justify-content: center; border: none; padding: 0; font-size: 1.5em; margin-bottom: 5px; }
+        
+        .table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 25px; }
+        table { width: 100%; border-collapse: collapse; min-width: 650px; font-size: 0.92em; }
+        th, td { padding: 14px 16px; text-align: right; border-bottom: 1px solid #e2e8f0; }
+        th:first-child, td:first-child { text-align: left; }
+        th { background: #f8fafc; font-weight: 700; color: #475569; font-size: 0.8em; text-transform: uppercase; letter-spacing: 0.5px; }
+        tr:hover { background: #f1f5f9; }
+        
+        .row-subtotal { background: #f8fafc; font-weight: 700; color: var(--primary); }
+        
+        /* Profitability Banner */
+        .profit-banner { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+        .profit-box { padding: 20px; border-radius: 10px; text-align: center; color: white; }
+        .box-revenue { background: var(--primary); }
+        .box-profit { background: var(--success); }
+        .profit-title { font-size: 0.9em; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9; margin-bottom: 5px; }
+        .profit-val { font-size: 1.8em; font-weight: 800; }
 
         @media print {
             body * { visibility: hidden; }
-            .invoice-sheet, .invoice-sheet * { visibility: visible; }
-            .invoice-sheet { position: absolute; left: 0; top: 0; width: 100%; border: none; padding: 0; box-shadow: none; }
-            button.btn-pdf { display: none !important; }
+            .dashboard, .dashboard * { visibility: visible; }
+            .dashboard { position: absolute; left: 0; top: 0; width: 100%; border: none; padding: 0; box-shadow: none; }
+            button { display: none !important; }
         }
     </style>
 </head>
 <body>
 
-    <h1>🌍 Indo-African Freight Desk</h1>
-    <div class="status" id="api-status">Syncing global financial channels...</div>
+    <div class="header-title">🌍 Global Arbitrage Desk</div>
+    <div class="status" id="api-status">Connecting to financial feeds...</div>
 
-    <div class="card">
-        <h2>Live Currency Matrix</h2>
-        <div class="currency-grid">
-            <div class="currency-box"><label>🇺🇸 USD ($)</label><input type="number" id="sync-usd" value="1" step="any"></div>
-            <div class="currency-box"><label>🇮🇳 INR (₹)</label><input type="number" id="sync-inr" step="any"></div>
-            <div class="currency-box"><label>🇹🇿 TZS (Sh)</label><input type="number" id="sync-tzs" step="any"></div>
+    <div class="grid-3" style="margin-bottom: 20px;">
+        <div class="currency-box">
+            <label>🇺🇸 USD ($)</label>
+            <input type="number" id="sync-usd" value="1" step="any">
+        </div>
+        <div class="currency-box">
+            <label>🇮🇳 INR (₹)</label>
+            <input type="number" id="sync-inr" step="any">
+        </div>
+        <div class="currency-box">
+            <label>🇹🇿 TZS (Sh)</label>
+            <input type="number" id="sync-tzs" step="any">
         </div>
     </div>
 
-    <div class="card">
-        <h2>Commercial FOB/CIF Matrix</h2>
+    <div class="card card-india">
+        <h2>🇮🇳 Phase 1: India Sourcing & Specs</h2>
         
-        <div class="form-row">
+        <div class="grid-2">
             <div>
-                <label>Commodity Type</label>
+                <label>Commodity Market Profile</label>
                 <select id="cargo-commodity" onchange="applyCommodityDefaults()">
-                    <option value="rice-pr11" data-duty="35" data-usd="535" selected>PR 11 Non-Basmati Rice (35% Duty | ~$535/MT)</option>
-                    <option value="rice-1121" data-duty="35" data-usd="1150">1121 Basmati Rice (35% Duty | ~$1150/MT)</option>
-                    <option value="pulses" data-duty="25" data-usd="800">Pulses / Lentils (25% Duty | ~$800/MT)</option>
-                    <option value="spices" data-duty="25" data-usd="2500">Spices / Seeds (25% Duty | ~$2500/MT)</option>
-                    <option value="building" data-duty="25" data-usd="400">Steel / Tiles (25% Duty | ~$400/MT)</option>
+                    <option value="rice" data-duty="35" data-in="535" data-out="850">PR 11 Rice (Buy: ~$535 | Sell: ~$850)</option>
+                    <option value="sugar" data-duty="25" data-in="550" data-out="900">Refined Sugar (Buy: ~$550 | Sell: ~$900)</option>
+                    <option value="steel" data-duty="25" data-in="600" data-out="1000">Steel / Rebar (Buy: ~$600 | Sell: ~$1000)</option>
+                    <option value="spices" data-duty="25" data-in="2800" data-out="4200">Spices/Cumin (Buy: ~$2800 | Sell: ~$4200)</option>
+                    <option value="pharma" data-duty="0" data-in="5000" data-out="8000">Generic Pharma (Buy: ~$5000 | Sell: ~$8000)</option>
                 </select>
             </div>
             <div>
-                <label>Container Configuration</label>
+                <label>Container Type</label>
                 <select id="cargo-container" onchange="applyWeightDefaults()">
-                    <option value="20" data-weight="24">20ft Heavy FCL (Max ~24 MT)</option>
-                    <option value="40" data-weight="27">40ft High-Cube (Max ~27 MT)</option>
+                    <option value="20" data-weight="24">20ft Heavy FCL (~24 MT)</option>
+                    <option value="40" data-weight="27">40ft High-Cube (~27 MT)</option>
                 </select>
             </div>
         </div>
 
-        <div class="form-row">
+        <div class="grid-2" style="margin-top: 15px;">
             <div>
-                <label>Total Cargo Weight (Metric Tons)</label>
+                <label>Cargo Weight (MT)</label>
                 <input type="number" id="cargo-weight" value="24">
             </div>
             <div>
-                <label>Commodity Price (Per MT)</label>
-                <div style="display:flex; gap:4px;">
-                    <input type="number" id="cargo-rate" value="535" style="flex:2;">
-                    <select id="cargo-currency" style="flex:1; padding:2px;" onchange="applyCommodityDefaults()">
+                <label>India Purchase Price (Per MT)</label>
+                <div class="grid-2-custom">
+                    <input type="number" id="cargo-buy-rate" value="535">
+                    <select id="cargo-currency" onchange="applyCommodityDefaults()">
                         <option value="USD" selected>USD</option>
                         <option value="INR">INR</option>
                     </select>
                 </div>
             </div>
         </div>
+    </div>
 
-        <div class="form-row">
+    <div class="card">
+        <h2>🚢 Phase 2: Logistics & Compliance</h2>
+        <div class="grid-2">
             <div>
-                <label>Origin Port (India FOB Clear)</label>
+                <label>Origin (FOB Clear)</label>
                 <select id="port-origin">
-                    <option value="350">Mundra, Gujarat (~$350 FOB)</option>
-                    <option value="380" selected>Nhava Sheva (~$380 FOB)</option>
+                    <option value="350">Mundra, GJ (~$350)</option>
+                    <option value="380">Nhava Sheva, MH (~$380)</option>
                 </select>
             </div>
             <div>
-                <label>Destination Port (Africa Landing)</label>
+                <label>Destination (Port Clear)</label>
                 <select id="port-dest">
-                    <option value="280">Dar es Salaam (~$280 Port)</option>
-                    <option value="240">Mombasa (~$240 Port)</option>
+                    <option value="280">Dar es Salaam, TZ (~$280)</option>
+                    <option value="240">Mombasa, KE (~$240)</option>
                 </select>
             </div>
         </div>
-
-        <div class="form-row">
+        <div class="grid-2" style="margin-top: 15px;">
             <div>
-                <label>Ocean Freight (USD/Container)</label>
+                <label>Ocean Freight (USD)</label>
                 <input type="number" id="shipping-freight" value="1200">
             </div>
             <div>
-                <label>Target Net Profit Margin (%)</label>
-                <input type="number" id="business-margin" value="12">
+                <label>Import Duty (%)</label>
+                <input type="number" id="custom-duty" value="35">
             </div>
         </div>
-
-        <button class="btn-calc" onclick="executeTradeMatrix()">Generate Commercial Quote</button>
     </div>
 
-    <div class="invoice-sheet" id="invoice-block">
-        <div class="invoice-header">
-            <h2 style="justify-content: center; margin:0; color:var(--primary); font-weight:800;">COMMERCIAL EXPORT QUOTATION</h2>
-            <div class="timezones" id="manifest-date"></div>
+    <div class="card card-africa">
+        <h2>🇹🇿 Phase 3: African Market Sales</h2>
+        <div class="grid-2">
+            <div>
+                <label>Expected African Wholesale Price (Per MT)</label>
+                <div class="grid-2-custom">
+                    <input type="number" id="cargo-sell-rate" value="850">
+                    <select id="sell-currency" onchange="applyCommodityDefaults()">
+                        <option value="USD" selected>USD</option>
+                        <option value="TZS">TZS</option>
+                    </select>
+                </div>
+            </div>
+            <div>
+                <label style="color: transparent;">Action</label>
+                <button class="btn-calc" onclick="executeArbitrageMatrix()" style="margin-top: 0; padding: 14px;">Calculate Profit</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard" id="invoice-block">
+        <div class="dash-header">
+            <h2>TRADE ECONOMICS LEDGER</h2>
+            <div style="color: #64748b; font-size: 0.9em;" id="manifest-date"></div>
         </div>
         
-        <div class="table-responsive">
-            <table class="invoice-table">
+        <div class="table-wrap">
+            <table>
                 <thead>
                     <tr>
                         <th>Line Item Description</th>
                         <th>USD Value</th>
-                        <th>INR Value</th>
-                        <th>TZS Value</th>
+                        <th>INR Equivalent</th>
+                        <th>TZS Equivalent</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td>Base Commodity Cost (<span id="inv-desc-weight"></span> MT @ <span id="inv-desc-rate"></span>)</td>
-                        <td id="v-base-usd"></td>
-                        <td id="v-base-inr"></td>
-                        <td id="v-base-tzs"></td>
+                        <td>1. Base Commodity Cost (India)</td>
+                        <td id="v-base-usd"></td><td id="v-base-inr"></td><td id="v-base-tzs"></td>
                     </tr>
                     <tr>
-                        <td>India Local Port Handling (FOB)</td>
-                        <td id="v-fob-usd"></td>
-                        <td id="v-fob-inr"></td>
-                        <td id="v-fob-tzs"></td>
-                    </tr>
-                    <tr class="row-highlight">
-                        <td>Total Free-Hold Valuation (FOB)</td>
-                        <td id="v-totalfob-usd"></td>
-                        <td id="v-totalfob-inr"></td>
-                        <td id="v-totalfob-tzs"></td>
+                        <td>2. India Port Handling (FOB)</td>
+                        <td id="v-fob-usd"></td><td id="v-fob-inr"></td><td id="v-fob-tzs"></td>
                     </tr>
                     <tr>
-                        <td>Ocean Marine Freight Carriage</td>
-                        <td id="v-frt-usd"></td>
-                        <td id="v-frt-inr"></td>
-                        <td id="v-frt-tzs"></td>
+                        <td>3. Ocean Marine Freight</td>
+                        <td id="v-frt-usd"></td><td id="v-frt-inr"></td><td id="v-frt-tzs"></td>
                     </tr>
-                    <tr class="row-highlight">
-                        <td>Landed Port-of-Entry Valuation (CIF)</td>
-                        <td id="v-cif-usd"></td>
-                        <td id="v-cif-inr"></td>
-                        <td id="v-cif-tzs"></td>
+                    <tr class="row-subtotal">
+                        <td>Total Landed CIF Value (Before Tax)</td>
+                        <td id="v-cif-usd"></td><td id="v-cif-inr"></td><td id="v-cif-tzs"></td>
                     </tr>
                     <tr>
-                        <td>African Terminal & Wharfage Fees</td>
-                        <td id="v-af-usd"></td>
-                        <td id="v-af-inr"></td>
-                        <td id="v-af-tzs"></td>
+                        <td>4. EAC Import Duty (<span id="out-duty-pct"></span>%)</td>
+                        <td id="v-tax-usd"></td><td id="v-tax-inr"></td><td id="v-tax-tzs"></td>
                     </tr>
                     <tr>
-                        <td>Import Tariff Duty (<span id="inv-desc-duty"></span>%)</td>
-                        <td id="v-tax-usd"></td>
-                        <td id="v-tax-inr"></td>
-                        <td id="v-tax-tzs"></td>
+                        <td>5. African Terminal / Clear Fees</td>
+                        <td id="v-af-usd"></td><td id="v-af-inr"></td><td id="v-af-tzs"></td>
                     </tr>
-                    <tr>
-                        <td>Corporate Profit Margin (<span id="inv-desc-margin"></span>%)</td>
-                        <td id="v-prof-usd"></td>
-                        <td id="v-prof-inr"></td>
-                        <td id="v-prof-tzs"></td>
-                    </tr>
-                    <tr class="invoice-total-row">
-                        <td>TOTAL FINAL QUOTE</td>
-                        <td id="v-final-usd"></td>
-                        <td id="v-final-inr"></td>
-                        <td id="v-final-tzs"></td>
-                    </tr>
-                    <tr class="unit-row" style="border-top: 3px solid white;">
-                        <td>Selling Price (Per Metric Ton)</td>
-                        <td id="u-mt-usd"></td>
-                        <td id="u-mt-inr"></td>
-                        <td id="u-mt-tzs"></td>
-                    </tr>
-                    <tr class="unit-row">
-                        <td>Selling Price (Per KG)</td>
-                        <td id="u-kg-usd"></td>
-                        <td id="u-kg-inr"></td>
-                        <td id="u-kg-tzs"></td>
+                    <tr class="row-subtotal" style="color: var(--danger);">
+                        <td>TOTAL CAPITAL OUTLAY (LANDED COST)</td>
+                        <td id="v-total-cost-usd"></td><td id="v-total-cost-inr"></td><td id="v-total-cost-tzs"></td>
                     </tr>
                 </tbody>
             </table>
         </div>
+
+        <div class="profit-banner">
+            <div class="profit-box box-revenue">
+                <div class="profit-title">Total Gross Revenue (Africa Sales)</div>
+                <div class="profit-val" id="out-revenue"></div>
+                <div style="font-size: 0.8em; margin-top: 5px; opacity: 0.8;" id="out-revenue-sub"></div>
+            </div>
+            <div class="profit-box box-profit" id="profit-container">
+                <div class="profit-title">Estimated Net Profit</div>
+                <div class="profit-val" id="out-profit"></div>
+                <div style="font-size: 0.9em; margin-top: 5px; font-weight: bold; background: rgba(255,255,255,0.2); display: inline-block; padding: 4px 10px; border-radius: 4px;" id="out-roi"></div>
+            </div>
+        </div>
         
-        <button class="btn-pdf" id="pdf-btn" onclick="window.print()">Download / Print PDF</button>
+        <button class="btn-pdf btn-calc" id="pdf-btn" onclick="window.print()">Print Financial Ledger</button>
     </div>
 
     <script src="app.js"></script>
