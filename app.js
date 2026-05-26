@@ -58,16 +58,19 @@ function handleCommodityChange() {
 function executeProforma() {
     if (!rates.USD) return alert("System downloading metrics. Standby.");
 
-    // Parse Data
+    // Parse Client Details
+    const clientName = document.getElementById('client-name').value || 'Valued Client';
+    const clientEmail = document.getElementById('client-email').value || '';
+    const clientPhone = document.getElementById('client-phone').value || '';
+
+    // Parse Trade Data
     const sel = document.getElementById('cargo-commodity');
     const itemName = sel.value === 'custom' ? (document.getElementById('custom-name').value || 'Custom Cargo') : sel.options[sel.selectedIndex].text;
     const mt = parseFloat(document.getElementById('cargo-weight').value) || 1; 
     
-    // Core Rates
     const buyUSD = parseFloat(document.getElementById('cargo-buy-rate').value) || 0;
     const sellUSD = parseFloat(document.getElementById('cargo-sell-rate').value) || 0;
     
-    // Granular Costs
     const packUSD = parseFloat(document.getElementById('cost-pack').value) || 0;
     const chaUSD = parseFloat(document.getElementById('cost-cha').value) || 0;
     const miscUSD = parseFloat(document.getElementById('cost-misc').value) || 0;
@@ -76,24 +79,21 @@ function executeProforma() {
     const destUSD = parseFloat(document.getElementById('cost-dest').value) || 0;
     const dutyPct = parseFloat(document.getElementById('custom-duty').value) || 0;
 
-    // --- INTERNAL MATH (The Real Costs) ---
+    // Internal Math
     const totalBuyUSD = mt * buyUSD;
     const internalPrepUSD = packUSD + chaUSD + miscUSD;
     const trueFobCostUSD = totalBuyUSD + internalPrepUSD + originUSD;
     const trueCifCostUSD = trueFobCostUSD + frtUSD;
 
-    // --- CLIENT MATH (What they see on the quote based on your SELL price) ---
-    // The client is quoted a final base commodity price that silently absorbs your profit
+    // Client Math
     const clientQuotedBaseUSD = (mt * sellUSD) - originUSD; 
     const clientFobUSD = clientQuotedBaseUSD + originUSD;
     const clientCifUSD = clientFobUSD + frtUSD;
     const clientDutyUSD = clientCifUSD * (dutyPct / 100);
 
-    // Profit Calculation
     const netProfitUSD = clientCifUSD - trueCifCostUSD; 
     const roi = (netProfitUSD / trueCifCostUSD) * 100;
 
-    // Formatting Helper
     const formatUSD = val => `$${val.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
     const formatINR = val => `₹${(val * rates.INR).toLocaleString('en-IN', {maximumFractionDigits: 0})}`;
     const formatTZS = val => `${(val * rates.TZS).toLocaleString('en-US', {maximumFractionDigits: 0})} TZS`;
@@ -104,17 +104,23 @@ function executeProforma() {
         document.getElementById(`${prefix}-tzs`).innerText = formatTZS(val);
     }
 
-    // Populate UI
+    // Populate Client PDF Header
+    document.getElementById('out-client-name').innerText = clientName;
+    document.getElementById('out-client-phone').innerText = clientPhone;
+    document.getElementById('out-client-email').innerText = clientEmail;
+    
+    const dateObj = new Date();
+    document.getElementById('print-date').innerText = dateObj.toLocaleDateString('en-GB');
+    document.getElementById('out-ref').innerText = `QT-${dateObj.getFullYear()}${String(dateObj.getMonth()+1).padStart(2, '0')}-${Math.floor(Math.random() * 9000 + 1000)}`;
+
     document.getElementById('out-item-name').innerText = itemName;
     document.getElementById('out-qty').innerText = mt;
     document.getElementById('out-duty-pct').innerText = dutyPct;
 
-    // Internal Rows
     render(totalBuyUSD, 'v-buy');
     render(internalPrepUSD, 'v-prep');
     render(trueFobCostUSD, 'v-truefob');
 
-    // Client Rows
     render(clientQuotedBaseUSD, 'v-quote-base');
     render(originUSD, 'v-origin');
     render(clientFobUSD, 'v-fob');
@@ -123,7 +129,6 @@ function executeProforma() {
     render(destUSD, 'v-dest');
     render(clientDutyUSD, 'v-duty');
 
-    // Banners
     document.getElementById('out-revenue').innerText = formatUSD(clientCifUSD);
     document.getElementById('out-profit').innerText = formatUSD(netProfitUSD);
     document.getElementById('out-roi').innerText = `ROI: ${roi.toFixed(1)}%`;
@@ -136,10 +141,6 @@ function executeProforma() {
         profitBox.style.background = 'var(--danger)';
     }
 
-    // Date
-    document.getElementById('print-date').innerText = `Date: ${new Date().toLocaleDateString('en-GB')} | Valid for 7 Days`;
-
-    // Show Block
     document.getElementById('invoice-block').style.display = 'block';
     document.getElementById('pdf-btn').style.display = 'block';
     document.getElementById('invoice-block').scrollIntoView({ behavior: 'smooth' });
