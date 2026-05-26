@@ -3,79 +3,113 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TZ Trade Calculator</title>
+    <title>TZ Trade Pro</title>
     <link rel="manifest" href="manifest.json">
     <style>
-        body { font-family: system-ui, sans-serif; padding: 20px; max-width: 600px; margin: auto; background: #f4f4f9; }
-        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        h1, h2 { color: #333; }
-        label { display: block; margin-top: 10px; font-weight: bold; }
-        input, select, button { width: 100%; padding: 10px; margin-top: 5px; box-sizing: border-box; border-radius: 5px; border: 1px solid #ccc; }
-        button { background: #0056b3; color: white; border: none; cursor: pointer; margin-top: 15px; font-weight: bold; }
+        body { font-family: system-ui, sans-serif; padding: 15px; max-width: 650px; margin: auto; background: #f4f4f9; color: #333; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; border-top: 4px solid #0056b3; }
+        h1 { text-align: center; font-size: 1.8em; }
+        h2 { font-size: 1.3em; margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        label { display: block; margin-top: 12px; font-weight: 600; font-size: 0.9em; }
+        input, select, button { width: 100%; padding: 12px; margin-top: 5px; box-sizing: border-box; border-radius: 6px; border: 1px solid #ccc; font-size: 1em; }
+        button { background: #0056b3; color: white; border: none; cursor: pointer; margin-top: 20px; font-weight: bold; transition: 0.2s; }
         button:hover { background: #004494; }
-        .result { margin-top: 15px; padding: 15px; background: #e9ecef; border-radius: 5px; font-size: 1.2em; font-weight: bold; text-align: center; }
-        .status { font-size: 0.8em; color: green; text-align: center; margin-bottom: 10px; }
+        
+        /* 3-Way Grid */
+        .currency-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 15px; }
+        .currency-box { background: #f8f9fa; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #e9ecef; }
+        .currency-box input { text-align: center; font-weight: bold; font-size: 1.1em; color: #0056b3; border: 1px solid #b3d4fc; }
+
+        /* Invoice Breakdown */
+        .breakdown { margin-top: 20px; padding: 15px; background: #e9ecef; border-radius: 8px; font-size: 0.95em; }
+        .breakdown-row { display: flex; justify-content: space-between; margin-bottom: 8px; border-bottom: 1px dashed #ccc; padding-bottom: 4px; }
+        .breakdown-row.total { font-weight: bold; font-size: 1.1em; border-bottom: none; border-top: 2px solid #ccc; padding-top: 10px; margin-top: 10px; color: #0056b3; }
+        .status { font-size: 0.85em; color: #28a745; text-align: center; margin-bottom: 15px; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <h1>🌍 TZ Trade Calc</h1>
-    <div class="status" id="api-status">Fetching live rates...</div>
+    <h1>🌍 Indo-African Trade Desk</h1>
+    <div class="status" id="api-status">Connecting to exchange server...</div>
 
+    <!-- 1. Multi-Way Converter -->
     <div class="card">
-        <h2>Forward/Reverse Converter</h2>
+        <h2>Live Market Rates</h2>
+        <p style="font-size: 0.85em; color: #666; margin-bottom: 10px;">Type an amount in any box to auto-convert.</p>
+        <div class="currency-grid">
+            <div class="currency-box">
+                <label>🇺🇸 USD</label>
+                <input type="number" id="sync-usd" value="1">
+            </div>
+            <div class="currency-box">
+                <label>🇮🇳 INR</label>
+                <input type="number" id="sync-inr">
+            </div>
+            <div class="currency-box">
+                <label>🇹🇿 TZS</label>
+                <input type="number" id="sync-tzs">
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Export Calculator -->
+    <div class="card">
+        <h2>Export Costing & Duty Engine</h2>
+        
+        <label>1. Base Cargo Value</label>
+        <div style="display: flex; gap: 10px;">
+            <input type="number" id="exp-val" placeholder="Cargo value" value="10000" style="flex: 2;">
+            <select id="exp-curr" style="flex: 1;">
+                <option value="USD">USD</option>
+                <option value="INR" selected>INR</option>
+            </select>
+        </div>
+
+        <label>2. Product Category (EAC CET Tariff)</label>
+        <select id="exp-product">
+            <option value="0">Pharmaceuticals / Raw Materials (0% Duty)</option>
+            <option value="10">Industrial Machinery / Heavy Vehicles (10% Duty)</option>
+            <option value="25" selected>General Cargo / Finished Goods (25% Duty)</option>
+            <option value="35">Agricultural / Rice / Textiles (35% Duty)</option>
+        </select>
+
         <div style="display: flex; gap: 10px;">
             <div style="flex: 1;">
-                <label>Amount</label>
-                <input type="number" id="conv-amount" value="1">
-            </div>
-            <div style="flex: 1;">
-                <label>From</label>
-                <select id="conv-from">
-                    <option value="USD">USD - US Dollar</option>
-                    <option value="INR">INR - Indian Rupee</option>
-                    <option value="TZS" selected>TZS - Tanzanian Shilling</option>
+                <label>3. Origin Port (India)</label>
+                <select id="exp-origin">
+                    <option value="150">Nhava Sheva (JNPT)</option>
+                    <option value="130">Mundra, Gujarat</option>
+                    <option value="160">Chennai Port</option>
                 </select>
             </div>
             <div style="flex: 1;">
-                <label>To</label>
-                <select id="conv-to">
-                    <option value="INR" selected>INR - Indian Rupee</option>
-                    <option value="USD">USD - US Dollar</option>
-                    <option value="TZS">TZS - Tanzanian Shilling</option>
+                <label>4. Destination Port</label>
+                <select id="exp-dest">
+                    <option value="250">Dar es Salaam (TZ)</option>
+                    <option value="200">Mombasa (KE)</option>
+                    <option value="280">Zanzibar (TZ)</option>
                 </select>
             </div>
         </div>
-        <div class="result" id="conv-result">0.00</div>
-    </div>
 
-    <div class="card">
-        <h2>Export Costing Calculator</h2>
-        <label>Base Cost (in Origin Currency)</label>
-        <input type="number" id="exp-base" placeholder="e.g. 1000">
-        
-        <label>Origin Currency</label>
-        <select id="exp-origin">
-            <option value="INR">India (INR)</option>
-            <option value="TZS">Tanzania (TZS)</option>
-            <option value="USD">USA (USD)</option>
-        </select>
+        <label>5. Estimated Ocean Freight (USD)</label>
+        <input type="number" id="exp-freight" value="800">
 
-        <label>Freight, Shipping & Insurance (in Origin Currency)</label>
-        <input type="number" id="exp-shipping" value="0">
+        <button onclick="calculateExportMatrix()">Calculate Landed Cost</button>
 
-        <label>Target Profit Margin (%)</label>
-        <input type="number" id="exp-margin" value="15">
-
-        <label>Export Target Currency</label>
-        <select id="exp-target">
-            <option value="TZS">Tanzania (TZS)</option>
-            <option value="USD">USA (USD)</option>
-            <option value="INR">India (INR)</option>
-        </select>
-
-        <button onclick="calculateExport()">Calculate Export Price</button>
-        <div class="result" id="exp-result">Final Landed Price: --</div>
+        <div class="breakdown" id="exp-breakdown" style="display:none;">
+            <div class="breakdown-row"><span>Cargo FOB Value:</span> <span id="out-fob"></span></div>
+            <div class="breakdown-row"><span>Origin Port Handling:</span> <span id="out-origin-fees"></span></div>
+            <div class="breakdown-row"><span>Ocean Freight:</span> <span id="out-freight"></span></div>
+            <div class="breakdown-row"><span>CIF Value (At African Port):</span> <strong id="out-cif"></strong></div>
+            <div class="breakdown-row"><span>Destination Port Fees:</span> <span id="out-dest-fees"></span></div>
+            <div class="breakdown-row"><span>Import Duty (EAC CET):</span> <span id="out-duty"></span></div>
+            <div class="breakdown-row total"><span>Total Landed Cost:</span> <span id="out-total"></span></div>
+            
+            <div style="margin-top: 15px; text-align: center; font-size: 0.85em; color: #555;">
+                *All final metrics displayed in USD. Multiply by live TZS rate for local pricing.
+            </div>
+        </div>
     </div>
 
     <script src="app.js"></script>
