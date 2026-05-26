@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TZ Trade Calculator</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        body { font-family: system-ui, sans-serif; padding: 20px; max-width: 600px; margin: auto; background: #f4f4f9; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h1, h2 { color: #333; }
+        label { display: block; margin-top: 10px; font-weight: bold; }
+        input, select, button { width: 100%; padding: 10px; margin-top: 5px; box-sizing: border-box; border-radius: 5px; border: 1px solid #ccc; }
+        button { background: #0056b3; color: white; border: none; cursor: pointer; margin-top: 15px; font-weight: bold; }
+        button:hover { background: #004494; }
+        .result { margin-top: 15px; padding: 15px; background: #e9ecef; border-radius: 5px; font-size: 1.2em; font-weight: bold; text-align: center; }
+        .status { font-size: 0.8em; color: green; text-align: center; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <h1>🌍 TZ Trade Calc</h1>
+    <div class="status" id="api-status">Fetching live rates...</div>
+
+    <div class="card">
+        <h2>Forward/Reverse Converter</h2>
+        <div style="display: flex; gap: 10px;">
+            <div style="flex: 1;">
+                <label>Amount</label>
+                <input type="number" id="conv-amount" value="1">
+            </div>
+            <div style="flex: 1;">
+                <label>From</label>
+                <select id="conv-from">
+                    <option value="USD">USD - US Dollar</option>
+                    <option value="INR">INR - Indian Rupee</option>
+                    <option value="TZS" selected>TZS - Tanzanian Shilling</option>
+                </select>
+            </div>
+            <div style="flex: 1;">
+                <label>To</label>
+                <select id="conv-to">
+                    <option value="INR" selected>INR - Indian Rupee</option>
+                    <option value="USD">USD - US Dollar</option>
+                    <option value="TZS">TZS - Tanzanian Shilling</option>
+                </select>
+            </div>
+        </div>
+        <div class="result" id="conv-result">0.00</div>
+    </div>
+
+    <div class="card">
+        <h2>Export Costing Calculator</h2>
+        <label>Base Cost (in Origin Currency)</label>
+        <input type="number" id="exp-base" placeholder="e.g. 1000">
+        
+        <label>Origin Currency</label>
+        <select id="exp-origin">
+            <option value="INR">India (INR)</option>
+            <option value="TZS">Tanzania (TZS)</option>
+            <option value="USD">USA (USD)</option>
+        </select>
+
+        <label>Freight, Shipping & Insurance (in Origin Currency)</label>
+        <input type="number" id="exp-shipping" value="0">
+
+        <label>Target Profit Margin (%)</label>
+        <input type="number" id="exp-margin" value="15">
+
+        <label>Export Target Currency</label>
+        <select id="exp-target">
+            <option value="TZS">Tanzania (TZS)</option>
+            <option value="USD">USA (USD)</option>
+            <option value="INR">India (INR)</option>
+        </select>
+
+        <button onclick="calculateExport()">Calculate Export Price</button>
+        <div class="result" id="exp-result">Final Landed Price: --</div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
