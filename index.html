@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Global Trade Desk V5</title>
+    <title>Global Trade Desk V6</title>
     <link rel="manifest" href="manifest.json">
     <style>
         :root { 
             --primary: #0f172a; --dark: #1e293b; --light: #f8f9fa; 
-            --accent: #2563eb; --india: #ff9933; --africa: #00a859;
-            --success: #10b981; --danger: #ef4444; 
+            --accent: #2563eb; --success: #10b981; --danger: #ef4444; 
         }
         body { font-family: system-ui, -apple-system, sans-serif; padding: 15px; max-width: 850px; margin: auto; background: #e2e8f0; color: var(--dark); }
         
@@ -44,44 +43,61 @@
         .highlight-row { background: #f1f5f9; font-weight: 700; color: var(--primary); font-size: 1.05em; }
         
         /* Internal Ledger Specifics */
-        .internal-only { background: #fffbeb; } /* Yellow tint for internal eyes only */
+        .internal-only { background: #fffbeb; } 
         .profit-banner { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px; }
         .profit-box { padding: 20px; border-radius: 10px; text-align: center; color: white; }
         .profit-val { font-size: 1.8em; font-weight: 800; }
 
-        /* PRINT STYLES - THIS HIDES INTERNAL DATA FROM CLIENTS */
+        /* PRINT STYLES - BULLETPROOF HIDING */
         .client-header { display: none; }
+        
         @media print {
-            body * { visibility: hidden; }
-            .dashboard, .dashboard * { visibility: visible; }
-            .dashboard { position: absolute; left: 0; top: 0; width: 100%; border: none; padding: 0; box-shadow: none; }
+            @page { margin: 1cm; size: A4 portrait; }
+            body { background: white; padding: 0; }
             
-            /* Hide the internal profit/cost rows */
-            .internal-only { display: none !important; }
-            .profit-banner { display: none !important; }
-            button { display: none !important; }
+            /* Hide ALL UI elements */
+            .card, .header-title, .status, .grid-3, button { display: none !important; }
             
-            /* Show Client Header */
-            .client-header { display: block; text-align: center; margin-bottom: 30px; }
-            .client-header h1 { font-size: 24px; margin: 0; color: #000; text-transform: uppercase; border-bottom: 2px solid #000; display: inline-block; padding-bottom: 5px; }
+            /* Hide ALL Internal Data */
+            .no-print, .internal-only, .profit-banner { display: none !important; }
             
-            /* Clean up table for print */
+            /* Show and Format Dashboard for PDF */
+            .dashboard { display: block !important; position: static; box-shadow: none; border: none; padding: 0; margin: 0; }
+            
+            /* Client Header Formatting */
+            .client-header { display: flex !important; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; border-bottom: 2px solid #000; padding-bottom: 20px; }
+            .client-header h1 { font-size: 24px; margin: 0 0 10px 0; color: #000; text-transform: uppercase; }
+            .client-header p { margin: 3px 0; font-size: 14px; color: #333; }
+            .client-to { text-align: right; }
+            .client-to h3 { margin: 0 0 8px 0; font-size: 16px; color: #666; text-transform: uppercase; }
+            .client-to p { font-weight: bold; font-size: 15px; }
+            
+            /* Table Print Formatting */
             table { border: 1px solid #000; }
-            th { background: #eee !important; color: #000; border-bottom: 2px solid #000; }
+            th { background: #f1f5f9 !important; color: #000; border-bottom: 2px solid #000; }
             td { color: #000; }
-            .highlight-row { background: #f9f9f9 !important; color: #000; border-top: 2px solid #000; border-bottom: 2px solid #000; }
+            .highlight-row { background: #f8fafc !important; color: #000; border-top: 2px solid #000; border-bottom: 2px solid #000; }
         }
     </style>
 </head>
 <body>
 
-    <div class="header-title">🌍 Global Trade Desk V5</div>
+    <div class="header-title">🌍 Global Trade Desk V6</div>
     <div class="status" id="api-status">Connecting to financial feeds...</div>
 
     <div class="grid-3" style="margin-bottom: 20px;">
         <div class="currency-box"><label>🇺🇸 USD ($)</label><input type="number" id="sync-usd" value="1" step="any"></div>
         <div class="currency-box"><label>🇮🇳 INR (₹)</label><input type="number" id="sync-inr" step="any"></div>
         <div class="currency-box"><label>🇹🇿 TZS (Sh)</label><input type="number" id="sync-tzs" step="any"></div>
+    </div>
+
+    <div class="card">
+        <h2>👤 Client Details (For PDF Record)</h2>
+        <div class="grid-3">
+            <div><label>Party / Company Name</label><input type="text" id="client-name" placeholder="e.g. Simba Trading Co."></div>
+            <div><label>Email Address</label><input type="email" id="client-email" placeholder="email@domain.com"></div>
+            <div><label>WhatsApp / Phone</label><input type="text" id="client-phone" placeholder="+255 ..."></div>
+        </div>
     </div>
 
     <div class="card">
@@ -102,7 +118,7 @@
                 <label>Container Type</label>
                 <select id="cargo-container">
                     <option value="20" data-weight="24">20ft Heavy FCL (Max 24 MT)</option>
-                    <option value="40" data-weight="12">40ft High-Cube Volumetric (Max ~12 MT Snacks)</option>
+                    <option value="40" data-weight="12">40ft High-Cube Volumetric (Max ~12 MT)</option>
                 </select>
             </div>
         </div>
@@ -117,9 +133,9 @@
     <div class="card">
         <h2>🏗️ Logistics, Packaging & Clearances (USD)</h2>
         <div class="grid-4">
-            <div><label>Packaging</label><input type="number" id="cost-pack" value="150" title="Total container packaging cost"></div>
-            <div><label>CHA Fees</label><input type="number" id="cost-cha" value="100" title="Customs House Agent"></div>
-            <div><label>Origin Port</label><input type="number" id="cost-origin" value="380" title="THC/Wharfage"></div>
+            <div><label>Packaging</label><input type="number" id="cost-pack" value="150"></div>
+            <div><label>CHA Fees</label><input type="number" id="cost-cha" value="100"></div>
+            <div><label>Origin Port</label><input type="number" id="cost-origin" value="380"></div>
             <div><label>Misc/Buffer</label><input type="number" id="cost-misc" value="50"></div>
         </div>
         <div class="grid-3" style="margin-top: 15px;">
@@ -133,8 +149,18 @@
     <div class="dashboard" id="invoice-block">
         
         <div class="client-header">
-            <h1>PROFORMA INVOICE / QUOTATION</h1>
-            <p id="print-date" style="margin-top:5px; font-size:14px; color:#555;"></p>
+            <div>
+                <h1>PROFORMA QUOTATION</h1>
+                <p><strong>Ref:</strong> <span id="out-ref"></span></p>
+                <p><strong>Date:</strong> <span id="print-date"></span></p>
+                <p><strong>Validity:</strong> 7 Days</p>
+            </div>
+            <div class="client-to">
+                <h3>PREPARED FOR:</h3>
+                <p id="out-client-name">--</p>
+                <p id="out-client-phone" style="font-weight: normal;">--</p>
+                <p id="out-client-email" style="font-weight: normal;">--</p>
+            </div>
         </div>
 
         <div class="table-wrap">
@@ -148,25 +174,25 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr class="internal-only">
+                    <tr class="internal-only no-print">
                         <td>[INTERNAL] Raw Commodity Buy Cost (<span id="out-qty"></span> MT)</td>
                         <td id="v-buy-usd"></td><td id="v-buy-inr"></td><td id="v-buy-tzs"></td>
                     </tr>
-                    <tr class="internal-only">
+                    <tr class="internal-only no-print">
                         <td>[INTERNAL] India Prep (Pack + CHA + Misc)</td>
                         <td id="v-prep-usd"></td><td id="v-prep-inr"></td><td id="v-prep-tzs"></td>
                     </tr>
-                    <tr class="internal-only" style="border-bottom: 3px solid #cbd5e1;">
+                    <tr class="internal-only no-print" style="border-bottom: 3px solid #cbd5e1;">
                         <td>[INTERNAL] True Base FOB Cost</td>
                         <td id="v-truefob-usd"></td><td id="v-truefob-inr"></td><td id="v-truefob-tzs"></td>
                     </tr>
 
                     <tr>
-                        <td>Quoted Commodity Value (Includes Packaging)</td>
+                        <td>Quoted Commodity Value (Includes Export Packaging)</td>
                         <td id="v-quote-base-usd"></td><td id="v-quote-base-inr"></td><td id="v-quote-base-tzs"></td>
                     </tr>
                     <tr>
-                        <td>India Origin Port Handling (THC & Clearances)</td>
+                        <td>India Origin Port Handling (THC & Export Clearances)</td>
                         <td id="v-origin-usd"></td><td id="v-origin-inr"></td><td id="v-origin-tzs"></td>
                     </tr>
                     <tr class="highlight-row">
@@ -181,7 +207,6 @@
                         <td>COST, INSURANCE, FREIGHT (CIF) QUOTE</td>
                         <td id="v-cif-usd"></td><td id="v-cif-inr"></td><td id="v-cif-tzs"></td>
                     </tr>
-                    
                     <tr>
                         <td>Est. Destination Terminal & Wharfage</td>
                         <td id="v-dest-usd"></td><td id="v-dest-inr"></td><td id="v-dest-tzs"></td>
@@ -194,7 +219,7 @@
             </table>
         </div>
 
-        <div class="profit-banner">
+        <div class="profit-banner no-print">
             <div class="profit-box" style="background: var(--primary);">
                 <div style="font-size: 0.9em; text-transform: uppercase;">Total Quote (CIF)</div>
                 <div class="profit-val" id="out-revenue"></div>
@@ -206,7 +231,7 @@
             </div>
         </div>
         
-        <button class="btn-pdf btn-calc" id="pdf-btn" onclick="window.print()" style="width: 100%;">🖨️ Print Client Proforma (Hides Internal Data)</button>
+        <button class="btn-pdf btn-calc no-print" id="pdf-btn" onclick="window.print()" style="width: 100%;">🖨️ Save PDF Record / Print for Client</button>
     </div>
 
     <script src="app.js"></script>
