@@ -3,113 +3,226 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TZ Trade Pro</title>
+    <title>TZ Trade Desk Pro</title>
     <link rel="manifest" href="manifest.json">
     <style>
-        body { font-family: system-ui, sans-serif; padding: 15px; max-width: 650px; margin: auto; background: #f4f4f9; color: #333; }
-        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; border-top: 4px solid #0056b3; }
-        h1 { text-align: center; font-size: 1.8em; }
-        h2 { font-size: 1.3em; margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-        label { display: block; margin-top: 12px; font-weight: 600; font-size: 0.9em; }
-        input, select, button { width: 100%; padding: 12px; margin-top: 5px; box-sizing: border-box; border-radius: 6px; border: 1px solid #ccc; font-size: 1em; }
-        button { background: #0056b3; color: white; border: none; cursor: pointer; margin-top: 20px; font-weight: bold; transition: 0.2s; }
-        button:hover { background: #004494; }
+        :root { --primary: #0056b3; --dark: #1e293b; --light: #f8f9fa; --accent: #28a745; }
+        body { font-family: system-ui, -apple-system, sans-serif; padding: 15px; max-width: 750px; margin: auto; background: #f1f5f9; color: var(--dark); }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px; border-top: 5px solid var(--primary); }
+        h1 { text-align: center; font-size: 1.8em; margin-bottom: 5px; color: var(--dark); }
+        h2 { font-size: 1.25em; margin-top: 0; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; color: var(--primary); display: flex; justify-content: space-between; }
+        label { display: block; margin-top: 14px; font-weight: 600; font-size: 0.88em; color: #475569; }
+        input, select, button { width: 100%; padding: 12px; margin-top: 6px; box-sizing: border-box; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 0.95em; }
+        input:focus, select:focus { outline: 2px solid var(--primary); border-color: transparent; }
         
         /* 3-Way Grid */
-        .currency-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 15px; }
-        .currency-box { background: #f8f9fa; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #e9ecef; }
-        .currency-box input { text-align: center; font-weight: bold; font-size: 1.1em; color: #0056b3; border: 1px solid #b3d4fc; }
+        .currency-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 10px; }
+        .currency-box { background: var(--light); padding: 12px; border-radius: 8px; text-align: center; border: 1px solid #e2e8f0; }
+        .currency-box input { text-align: center; font-weight: bold; font-size: 1.1em; color: var(--primary); background: white; }
+        
+        /* Form Grids */
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        
+        button.btn-calc { background: var(--primary); color: white; border: none; cursor: pointer; margin-top: 20px; font-weight: bold; font-size: 1.05em; }
+        button.btn-calc:hover { background: #004494; }
+        button.btn-pdf { background: var(--accent); color: white; border: none; cursor: pointer; margin-top: 10px; font-weight: bold; display: none;}
+        button.btn-pdf:hover { background: #1e7e34; }
 
-        /* Invoice Breakdown */
-        .breakdown { margin-top: 20px; padding: 15px; background: #e9ecef; border-radius: 8px; font-size: 0.95em; }
-        .breakdown-row { display: flex; justify-content: space-between; margin-bottom: 8px; border-bottom: 1px dashed #ccc; padding-bottom: 4px; }
-        .breakdown-row.total { font-weight: bold; font-size: 1.1em; border-bottom: none; border-top: 2px solid #ccc; padding-top: 10px; margin-top: 10px; color: #0056b3; }
-        .status { font-size: 0.85em; color: #28a745; text-align: center; margin-bottom: 15px; font-weight: bold; }
+        /* Invoice Sheet Styling */
+        .invoice-sheet { background: white; border: 2px solid #cbd5e1; border-radius: 8px; padding: 25px; margin-top: 25px; display: none; font-size: 0.92em; }
+        .invoice-header { text-align: center; border-bottom: 2px dashed #94a3b8; padding-bottom: 15px; margin-bottom: 15px; }
+        .invoice-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        .invoice-table th, .invoice-table td { padding: 10px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+        .invoice-table th { background: var(--light); font-weight: 600; }
+        .invoice-total-row { font-size: 1.15em; font-weight: bold; color: var(--primary); background: #f0fdf4; }
+        
+        .status { font-size: 0.85em; color: var(--accent); text-align: center; margin-bottom: 20px; font-weight: 500; }
+
+        /* Print Override */
+        @media print {
+            body * { visibility: hidden; }
+            .invoice-sheet, .invoice-sheet * { visibility: visible; }
+            .invoice-sheet { position: absolute; left: 0; top: 0; width: 100%; border: none; padding: 0; }
+            button.btn-pdf { display: none !important; }
+        }
     </style>
 </head>
 <body>
 
-    <h1>🌍 Indo-African Trade Desk</h1>
-    <div class="status" id="api-status">Connecting to exchange server...</div>
+    <h1>🌍 Indo-African Freight Desk</h1>
+    <div class="status" id="api-status">Syncing global financial channels...</div>
 
-    <!-- 1. Multi-Way Converter -->
     <div class="card">
-        <h2>Live Market Rates</h2>
-        <p style="font-size: 0.85em; color: #666; margin-bottom: 10px;">Type an amount in any box to auto-convert.</p>
+        <h2>Live Currency Matrix <span style="font-size:0.7em; color:#64748b; font-weight:normal;">(Edit any value)</span></h2>
         <div class="currency-grid">
             <div class="currency-box">
-                <label>🇺🇸 USD</label>
-                <input type="number" id="sync-usd" value="1">
+                <label>🇺🇸 USD ($)</label>
+                <input type="number" id="sync-usd" value="1" step="any">
             </div>
             <div class="currency-box">
-                <label>🇮🇳 INR</label>
-                <input type="number" id="sync-inr">
+                <label>🇮🇳 INR (₹)</label>
+                <input type="number" id="sync-inr" step="any">
             </div>
             <div class="currency-box">
-                <label>🇹🇿 TZS</label>
-                <input type="number" id="sync-tzs">
+                <label>🇹🇿 TZS (Sh)</label>
+                <input type="number" id="sync-tzs" step="any">
             </div>
         </div>
     </div>
 
-    <!-- 2. Export Calculator -->
     <div class="card">
-        <h2>Export Costing & Duty Engine</h2>
+        <h2>Commercial Container Pricing & FOB/CIF Engine</h2>
         
-        <label>1. Base Cargo Value</label>
-        <div style="display: flex; gap: 10px;">
-            <input type="number" id="exp-val" placeholder="Cargo value" value="10000" style="flex: 2;">
-            <select id="exp-curr" style="flex: 1;">
-                <option value="USD">USD</option>
-                <option value="INR" selected>INR</option>
-            </select>
-        </div>
-
-        <label>2. Product Category (EAC CET Tariff)</label>
-        <select id="exp-product">
-            <option value="0">Pharmaceuticals / Raw Materials (0% Duty)</option>
-            <option value="10">Industrial Machinery / Heavy Vehicles (10% Duty)</option>
-            <option value="25" selected>General Cargo / Finished Goods (25% Duty)</option>
-            <option value="35">Agricultural / Rice / Textiles (35% Duty)</option>
-        </select>
-
-        <div style="display: flex; gap: 10px;">
-            <div style="flex: 1;">
-                <label>3. Origin Port (India)</label>
-                <select id="exp-origin">
-                    <option value="150">Nhava Sheva (JNPT)</option>
-                    <option value="130">Mundra, Gujarat</option>
-                    <option value="160">Chennai Port</option>
+        <div class="form-row">
+            <div>
+                <label>Commodity Type</label>
+                <select id="cargo-commodity" onchange="applyCommodityDefaults()">
+                    <option value="rice" data-duty="35">White/Basmati Rice (35% EAC Duty)</option>
+                    <option value="pulses" data-duty="25">Pulses / Grains (25% EAC Duty)</option>
+                    <option value="spices" data-duty="25">Spices & Seed Cargo (25% EAC Duty)</option>
+                    <option value="building" data-duty="25">Building Materials / Steel / Tiles (25%)</option>
+                    <option value="pharma" data-duty="0">Medical / Pharma Raw Material (0%)</option>
                 </select>
             </div>
-            <div style="flex: 1;">
-                <label>4. Destination Port</label>
-                <select id="exp-dest">
-                    <option value="250">Dar es Salaam (TZ)</option>
-                    <option value="200">Mombasa (KE)</option>
-                    <option value="280">Zanzibar (TZ)</option>
+            <div>
+                <label>Container Configuration</label>
+                <select id="cargo-container">
+                    <option value="20">20ft Heavy FCL (Max ~25 MT)</option>
+                    <option value="40">40ft High-Cube FCL (Max ~27 MT)</option>
                 </select>
             </div>
         </div>
 
-        <label>5. Estimated Ocean Freight (USD)</label>
-        <input type="number" id="exp-freight" value="800">
-
-        <button onclick="calculateExportMatrix()">Calculate Landed Cost</button>
-
-        <div class="breakdown" id="exp-breakdown" style="display:none;">
-            <div class="breakdown-row"><span>Cargo FOB Value:</span> <span id="out-fob"></span></div>
-            <div class="breakdown-row"><span>Origin Port Handling:</span> <span id="out-origin-fees"></span></div>
-            <div class="breakdown-row"><span>Ocean Freight:</span> <span id="out-freight"></span></div>
-            <div class="breakdown-row"><span>CIF Value (At African Port):</span> <strong id="out-cif"></strong></div>
-            <div class="breakdown-row"><span>Destination Port Fees:</span> <span id="out-dest-fees"></span></div>
-            <div class="breakdown-row"><span>Import Duty (EAC CET):</span> <span id="out-duty"></span></div>
-            <div class="breakdown-row total"><span>Total Landed Cost:</span> <span id="out-total"></span></div>
-            
-            <div style="margin-top: 15px; text-align: center; font-size: 0.85em; color: #555;">
-                *All final metrics displayed in USD. Multiply by live TZS rate for local pricing.
+        <div class="form-row">
+            <div>
+                <label>Total Cargo Weight (Metric Tons)</label>
+                <input type="number" id="cargo-weight" value="24" placeholder="e.g. 24">
+            </div>
+            <div>
+                <label>Commodity Price (Per Metric Ton)</label>
+                <div style="display:flex; gap:4px;">
+                    <input type="number" id="cargo-rate" value="450" placeholder="Price/MT" style="flex:2;">
+                    <select id="cargo-currency" style="flex:1; padding:2px;">
+                        <option value="USD">USD</option>
+                        <option value="INR" selected>INR</option>
+                    </select>
+                </div>
             </div>
         </div>
+
+        <div class="form-row">
+            <div>
+                <label>Origin Port (India FOB Clear)</label>
+                <select id="port-origin">
+                    <option value="350">Mundra, Gujarat (~$350 Local/FOB)</option>
+                    <option value="380" selected>Nhava Sheva, Mumbai (~$380 Local/FOB)</option>
+                    <option value="320">Chennai Port (~$320 Local/FOB)</option>
+                </select>
+            </div>
+            <div>
+                <label>Destination Port (Africa Landing)</label>
+                <select id="port-dest">
+                    <option value="280">Dar es Salaam, TZ (~$280 Terminal/Wharf)</option>
+                    <option value="240">Mombasa, Kenya (~$240 Terminal/Wharf)</option>
+                    <option value="310">Zanzibar Port (~$310 Terminal/Wharf)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div>
+                <label>Ocean Freight Rate (USD / Container)</label>
+                <input type="number" id="shipping-freight" value="1200" placeholder="e.g. 1200">
+            </div>
+            <div>
+                <label>Your Target Net Profit Margin (%)</label>
+                <input type="number" id="business-margin" value="12" placeholder="Profit %">
+            </div>
+        </div>
+
+        <button class="btn-calc" onclick="executeTradeMatrix()">Run Trade Architecture</button>
+    </div>
+
+    <div class="invoice-sheet" id="invoice-block">
+        <div class="invoice-header">
+            <h2 style="justify-content: center; margin:0; color:#000;">COMMERCIAL EXPORT QUOTATION MANIFEST</h2>
+            <p style="margin:5px 0 0 0; color:#475569;" id="manifest-date"></p>
+        </div>
+        
+        <table class="invoice-table">
+            <thead>
+                <tr>
+                    <th>Line Item Description</th>
+                    <th style="text-align: right;">USD Value</th>
+                    <th style="text-align: right;">INR Value</th>
+                    <th style="text-align: right;">TZS Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Base Commodity Cost (<span id="inv-desc-weight"></span> MT @ <span id="inv-desc-rate"></span>)</td>
+                    <td style="text-align: right;" id="v-base-usd"></td>
+                    <td style="text-align: right;" id="v-base-inr"></td>
+                    <td style="text-align: right;" id="v-base-tzs"></td>
+                </tr>
+                <tr>
+                    <td>India Local Port Handling & Free-Hold Clearance (FOB)</td>
+                    <td style="text-align: right;" id="v-fob-usd"></td>
+                    <td style="text-align: right;" id="v-fob-inr"></td>
+                    <td style="text-align: right;" id="v-fob-tzs"></td>
+                </tr>
+                <tr style="background: #f8fafc; font-weight: 600;">
+                    <td>Total Free-Hold Border Valuation (FOB Price)</td>
+                    <td style="text-align: right;" id="v-totalfob-usd"></td>
+                    <td style="text-align: right;" id="v-totalfob-inr"></td>
+                    <td style="text-align: right;" id="v-totalfob-tzs"></td>
+                </tr>
+                <tr>
+                    <td>Ocean Marine Freight Carriage Cost</td>
+                    <td style="text-align: right;" id="v-frt-usd"></td>
+                    <td style="text-align: right;" id="v-frt-inr"></td>
+                    <td style="text-align: right;" id="v-frt-tzs"></td>
+                </tr>
+                <tr style="background: #f1f5f9; font-weight: 600;">
+                    <td>Landed Port-of-Entry Valuation (CIF Price)</td>
+                    <td style="text-align: right;" id="v-cif-usd"></td>
+                    <td style="text-align: right;" id="v-cif-inr"></td>
+                    <td style="text-align: right;" id="v-cif-tzs"></td>
+                </tr>
+                <tr>
+                    <td>African Terminal Handling, Wharfage & Agent Clear Fees</td>
+                    <td style="text-align: right;" id="v-af-usd"></td>
+                    <td style="text-align: right;" id="v-af-inr"></td>
+                    <td style="text-align: right;" id="v-af-tzs"></td>
+                </tr>
+                <tr>
+                    <td>Import Tariff Duty Protection Fee (<span id="inv-desc-duty"></span>%)</td>
+                    <td style="text-align: right;" id="v-tax-usd"></td>
+                    <td style="text-align: right;" id="v-tax-inr"></td>
+                    <td style="text-align: right;" id="v-tax-tzs"></td>
+                </tr>
+                <tr style="font-weight: 600; background:#fef2f2;">
+                    <td>Absolute Landed Break-Even Base Cost</td>
+                    <td style="text-align: right;" id="v-be-usd"></td>
+                    <td style="text-align: right;" id="v-be-inr"></td>
+                    <td style="text-align: right;" id="v-be-tzs"></td>
+                </tr>
+                <tr>
+                    <td>Target Corporate Profit Protection Line (<span id="inv-desc-margin"></span>%)</td>
+                    <td style="text-align: right;" id="v-prof-usd"></td>
+                    <td style="text-align: right;" id="v-prof-inr"></td>
+                    <td style="text-align: right;" id="v-prof-tzs"></td>
+                </tr>
+                <tr class="invoice-total-row">
+                    <td>TOTAL FINAL EXPORT PRICE MANIFEST QUOTE</td>
+                    <td style="text-align: right;" id="v-final-usd"></td>
+                    <td style="text-align: right;" id="v-final-inr"></td>
+                    <td style="text-align: right;" id="v-final-tzs"></td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <button class="btn-pdf" id="pdf-btn" onclick="window.print()">Download & Print Commercial PDF Quote</button>
     </div>
 
     <script src="app.js"></script>
