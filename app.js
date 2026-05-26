@@ -1,7 +1,6 @@
 let rates = {};
-let isSyncing = false; // Flag to prevent circular calculation events loops
+let isSyncing = false;
 
-// UI Handles for 3-Way Sync Inputs
 const usdIn = document.getElementById('sync-usd');
 const inrIn = document.getElementById('sync-inr');
 const tzsIn = document.getElementById('sync-tzs');
@@ -12,20 +11,18 @@ async function fetchRates() {
         const data = await response.json();
         rates = data.rates;
         
-        document.getElementById('api-status').innerText = `🟢 Live Banking Feeds Operational | Rates Fresh (USD Base)`;
-        
-        // Populate system based on initial 1 USD value
+        document.getElementById('api-status').innerText = `🟢 Live Banking Feeds Operational`;
         calculateThreeWaySync('USD');
+        applyCommodityDefaults(); // Fill realistic price on load
     } catch (error) {
         document.getElementById('api-status').innerText = '🔴 Fallback System Activated (Network Offline)';
         document.getElementById('api-status').style.color = '#ef4444';
-        // Emergency standard hardware fallback parameters
         rates = { USD: 1, INR: 83.50, TZS: 2600.00 };
         calculateThreeWaySync('USD');
+        applyCommodityDefaults();
     }
 }
 
-// 3-Way Interactive Realtime Synchronizer (Safe Multi-Directional Data flow)
 function calculateThreeWaySync(originField) {
     if (!rates.USD || isSyncing) return;
     isSyncing = true;
@@ -40,7 +37,6 @@ function calculateThreeWaySync(originField) {
         baseUSDValue = (parseFloat(tzsIn.value) || 0) / rates.TZS;
     }
 
-    // Safely shift values down the pipeline to secondary fields
     if (originField !== 'USD') usdIn.value = baseUSDValue === 0 ? '' : baseUSDValue.toFixed(4);
     if (originField !== 'INR') inrIn.value = baseUSDValue === 0 ? '' : (baseUSDValue * rates.INR).toFixed(2);
     if (originField !== 'TZS') tzsIn.value = baseUSDValue === 0 ? '' : (baseUSDValue * rates.TZS).toFixed(2);
@@ -48,28 +44,40 @@ function calculateThreeWaySync(originField) {
     isSyncing = false;
 }
 
-// Event hooks to watch typing in cross-currency blocks
 usdIn.addEventListener('input', () => calculateThreeWaySync('USD'));
 inrIn.addEventListener('input', () => calculateThreeWaySync('INR'));
-tzsIn.addEventListener('input', () => calculateThreeWaySync('INR')); // Using key bindings safely
-inrIn.oninput = () => calculateThreeWaySync('INR');
-tzsIn.oninput = () => calculateThreeWaySync('TZS');
+tzsIn.addEventListener('input', () => calculateThreeWaySync('TZS'));
 
-// Auto Adjustments based on commodity profiles selected
+// REAL WORLD DATA INJECTION
 function applyCommodityDefaults() {
+    if (!rates.INR) return;
     const selection = document.getElementById('cargo-commodity');
     const selectedOpt = selection.options[selection.selectedIndex];
-    // Can auto calculate custom base adjustments here if required in scaling versions
+    
+    const baseUSD = parseFloat(selectedOpt.dataset.usd);
+    const curr = document.getElementById('cargo-currency').value;
+    
+    // Auto-fill the input box with real-world equivalent metrics
+    if (curr === 'USD') {
+        document.getElementById('cargo-rate').value = baseUSD;
+    } else if (curr === 'INR') {
+        document.getElementById('cargo-rate').value = Math.round(baseUSD * rates.INR);
+    }
 }
 
-// Primary Commercial Matrix Logic Controller
-function executeTradeMatrix() {
-    if (!rates.USD) return alert("System database downloading core exchange metrics. Standby.");
+function applyWeightDefaults() {
+    const selection = document.getElementById('cargo-container');
+    const weight = selection.options[selection.selectedIndex].dataset.weight;
+    document.getElementById('cargo-weight').value = weight;
+}
 
-    // Extract raw payload data
+
+function executeTradeMatrix() {
+    if (!rates.USD) return alert("System downloading exchange metrics. Standby.");
+
     const commodity = document.getElementById('cargo-commodity').value;
     const dutyPercentage = parseFloat(document.getElementById('cargo-commodity').options[document.getElementById('cargo-commodity').selectedIndex].dataset.duty);
-    const weightTons = parseFloat(document.getElementById('cargo-weight').value) || 0;
+    const weightTons = parseFloat(document.getElementById('cargo-weight').value) || 1; 
     const ratePerTon = parseFloat(document.getElementById('cargo-rate').value) || 0;
     const rateCurrency = document.getElementById('cargo-currency').value;
     
@@ -78,7 +86,7 @@ function executeTradeMatrix() {
     const oceanFreightUSD = parseFloat(document.getElementById('shipping-freight').value) || 0;
     const corporateMargin = parseFloat(document.getElementById('business-margin').value) || 0;
 
-    // 1. Calculate Base Product Valuation Architecture
+    // 1. Base Valuation
     let totalBaseProductCostUSD = 0;
     const totalRawProductCostInput = weightTons * ratePerTon;
 
@@ -88,26 +96,26 @@ function executeTradeMatrix() {
         totalBaseProductCostUSD = totalRawProductCostInput / rates.INR;
     }
 
-    // 2. Multi-tier Freight/Duty Formulation Engine
+    // 2. Freight/Duty Formulation
     const totalFOBValueUSD = totalBaseProductCostUSD + portFobUSD; 
-    const totalCIFValueUSD = totalFOBValueUSD + oceanFreightUSD; // Cost + Freight + Base clear
+    const totalCIFValueUSD = totalFOBValueUSD + oceanFreightUSD;
     const calculatedEACDutyUSD = totalCIFValueUSD * (dutyPercentage / 100);
     
-    // Absolute Landed Break-even Point 
     const totalLandedBreakEvenUSD = totalCIFValueUSD + portDestUSD + calculatedEACDutyUSD;
-    
-    // Profit additions
     const calculatedProfitUSD = totalLandedBreakEvenUSD * (corporateMargin / 100);
     const finalExportQuoteUSD = totalLandedBreakEvenUSD + calculatedProfitUSD;
 
-    // 3. Document Matrix Transformation Function
+    // 3. Unit Breakdown (Per MT and Per KG based on Final Price)
+    const finalPricePerMT_USD = finalExportQuoteUSD / weightTons;
+    const finalPricePerKG_USD = finalPricePerMT_USD / 1000;
+
+    // 4. Render Engine
     function renderRow(usdValue, elementIdPrefix) {
         document.getElementById(`${elementIdPrefix}-usd`).innerText = `$${usdValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
         document.getElementById(`${elementIdPrefix}-inr`).innerText = `₹${(usdValue * rates.INR).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
         document.getElementById(`${elementIdPrefix}-tzs`).innerText = `${(usdValue * rates.TZS).toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0})} TZS`;
     }
 
-    // Render exact ledger allocations
     renderRow(totalBaseProductCostUSD, 'v-base');
     renderRow(portFobUSD, 'v-fob');
     renderRow(totalFOBValueUSD, 'v-totalfob');
@@ -115,24 +123,32 @@ function executeTradeMatrix() {
     renderRow(totalCIFValueUSD, 'v-cif');
     renderRow(portDestUSD, 'v-af');
     renderRow(calculatedEACDutyUSD, 'v-tax');
-    renderRow(totalLandedBreakEvenUSD, 'v-be');
     renderRow(calculatedProfitUSD, 'v-prof');
     renderRow(finalExportQuoteUSD, 'v-final');
 
-    // Update metadata descriptions inside sheet
+    // Render Unit Prices
+    renderRow(finalPricePerMT_USD, 'u-mt');
+    renderRow(finalPricePerKG_USD, 'u-kg');
+
     document.getElementById('inv-desc-weight').innerText = weightTons;
     document.getElementById('inv-desc-rate').innerText = `${ratePerTon} ${rateCurrency}`;
     document.getElementById('inv-desc-duty').innerText = dutyPercentage;
     document.getElementById('inv-desc-margin').innerText = corporateMargin;
-    document.getElementById('manifest-date').innerText = `Generated on: ${new Date().toUTCString()}`;
 
-    // Reveal UI Output components
+    // Set Timezones (IST & EAT)
+    const now = new Date();
+    const timeOpts = { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' };
+    const istTime = new Intl.DateTimeFormat('en-IN', { ...timeOpts, timeZone: 'Asia/Kolkata' }).format(now);
+    const eatTime = new Intl.DateTimeFormat('en-KE', { ...timeOpts, timeZone: 'Africa/Dar_es_Salaam' }).format(now);
+    
+    document.getElementById('manifest-date').innerHTML = `
+        <div style="margin-bottom: 5px;"><strong>IST:</strong> ${istTime}</div>
+        <div><strong>EAT:</strong> ${eatTime}</div>
+    `;
+
     document.getElementById('invoice-block').style.display = 'block';
     document.getElementById('pdf-btn').style.display = 'block';
-    
-    // Smooth scroll down to invoice display target window
     document.getElementById('invoice-block').scrollIntoView({ behavior: 'smooth' });
 }
 
-// Fire system initialization scripts
 fetchRates();
