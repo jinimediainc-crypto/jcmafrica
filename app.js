@@ -1,71 +1,97 @@
 let rates = {};
 
-// 1. Fetch Currency Rates (Free API, No Key needed for base endpoint)
+// 1. Fetch Live Rates
 async function fetchRates() {
     try {
         const response = await fetch('https://open.er-api.com/v6/latest/USD');
         const data = await response.json();
         rates = data.rates;
-        document.getElementById('api-status').innerText = `Live rates loaded (Base: USD). Last updated: ${data.time_last_update_utc.substring(0, 16)}`;
-        calculateConversion(); // Trigger initial calc
+        
+        document.getElementById('api-status').innerText = `🟢 Live Rates Active | Last Update: ${data.time_last_update_utc.substring(0, 16)}`;
+        
+        // Trigger initial sync based on USD value
+        syncCurrencies('USD');
     } catch (error) {
-        document.getElementById('api-status').innerText = 'Offline mode or API error.';
-        document.getElementById('api-status').style.color = 'red';
+        document.getElementById('api-status').innerText = '🔴 Offline Mode: Showing cached rates if available.';
+        document.getElementById('api-status').style.color = '#dc3545';
     }
 }
 
-// 2. Forward/Reverse Converter Logic
-function calculateConversion() {
-    if (!rates.USD) return;
-    
-    const amount = parseFloat(document.getElementById('conv-amount').value) || 0;
-    const from = document.getElementById('conv-from').value;
-    const to = document.getElementById('conv-to').value;
+// 2. 3-Way Currency Synchronizer
+const usdInput = document.getElementById('sync-usd');
+const inrInput = document.getElementById('sync-inr');
+const tzsInput = document.getElementById('sync-tzs');
 
-    // Convert 'From' to USD, then USD to 'To'
-    const amountInUSD = amount / rates[from];
-    const finalAmount = amountInUSD * rates[to];
+function syncCurrencies(source) {
+    if (!rates.USD) return; // Ensure API loaded
 
-    document.getElementById('conv-result').innerText = `${finalAmount.toFixed(2)} ${to}`;
+    let usdVal = 0;
+
+    // Convert whatever the user typed into USD first
+    if (source === 'USD') {
+        usdVal = parseFloat(usdInput.value) || 0;
+    } else if (source === 'INR') {
+        usdVal = (parseFloat(inrInput.value) || 0) / rates.INR;
+    } else if (source === 'TZS') {
+        usdVal = (parseFloat(tzsInput.value) || 0) / rates.TZS;
+    }
+
+    // Update the other two inputs based on the USD base
+    if (source !== 'USD') usdInput.value = usdVal.toFixed(2);
+    if (source !== 'INR') inrInput.value = (usdVal * rates.INR).toFixed(2);
+    if (source !== 'TZS') tzsInput.value = (usdVal * rates.TZS).toFixed(2);
 }
 
-// 3. Export Calculator Logic
-function calculateExport() {
+// Attach listeners so typing in any box updates the others immediately
+usdInput.addEventListener('input', () => syncCurrencies('USD'));
+inrInput.addEventListener('input', () => syncCurrencies('INR'));
+tzsInput.addEventListener('input', () => syncCurrencies('TZS'));
+
+
+// 3. Export Duty & Logistics Engine
+function calculateExportMatrix() {
     if (!rates.USD) {
-        alert("Exchange rates not loaded yet.");
+        alert("Please wait for exchange rates to load.");
         return;
     }
 
-    const baseCost = parseFloat(document.getElementById('exp-base').value) || 0;
-    const shipping = parseFloat(document.getElementById('exp-shipping').value) || 0;
-    const margin = parseFloat(document.getElementById('exp-margin').value) || 0;
+    // Get Inputs
+    const rawVal = parseFloat(document.getElementById('exp-val').value) || 0;
+    const inputCurr = document.getElementById('exp-curr').value;
+    const dutyRate = parseFloat(document.getElementById('exp-product').value) || 0;
     
-    const originCurr = document.getElementById('exp-origin').value;
-    const targetCurr = document.getElementById('exp-target').value;
+    // Get Port/Freight Estimates (Values stored in USD for standardization)
+    const originHandlingUSD = parseFloat(document.getElementById('exp-origin').value) || 0;
+    const destHandlingUSD = parseFloat(document.getElementById('exp-dest').value) || 0;
+    const freightUSD = parseFloat(document.getElementById('exp-freight').value) || 0;
 
-    // Math: Total Cost in origin currency
-    const totalCostOrigin = baseCost + shipping;
-    // Add margin
-    const priceWithMarginOrigin = totalCostOrigin + (totalCostOrigin * (margin / 100));
+    // Normalize Cargo Value to USD
+    const cargoValueUSD = inputCurr === 'USD' ? rawVal : rawVal / rates[inputCurr];
 
-    // Currency Conversion
-    const amountInUSD = priceWithMarginOrigin / rates[originCurr];
-    const finalExportPrice = amountInUSD * rates[targetCurr];
+    // Math: Cost, Insurance, Freight (CIF)
+    const cifValueUSD = cargoValueUSD + originHandlingUSD + freightUSD;
 
-    document.getElementById('exp-result').innerText = `Quote: ${finalExportPrice.toFixed(2)} ${targetCurr}`;
+    // Math: Duty Calculations (EAC CET Duty is calculated on the CIF Value)
+    const importDutyUSD = cifValueUSD * (dutyRate / 100);
+
+    // Math: Total Landed Cost
+    const totalLandedUSD = cifValueUSD + destHandlingUSD + importDutyUSD;
+
+    // Render Data to UI
+    document.getElementById('out-fob').innerText = `$${cargoValueUSD.toFixed(2)}`;
+    document.getElementById('out-origin-fees').innerText = `$${originHandlingUSD.toFixed(2)}`;
+    document.getElementById('out-freight').innerText = `$${freightUSD.toFixed(2)}`;
+    
+    document.getElementById('out-cif').innerText = `$${cifValueUSD.toFixed(2)}`;
+    
+    document.getElementById('out-dest-fees').innerText = `$${destHandlingUSD.toFixed(2)}`;
+    document.getElementById('out-duty').innerText = `$${importDutyUSD.toFixed(2)} (${dutyRate}%)`;
+    
+    document.getElementById('out-total').innerText = `$${totalLandedUSD.toFixed(2)}`;
+
+    // Show the breakdown panel
+    document.getElementById('exp-breakdown').style.display = 'block';
 }
-
-// Event Listeners for auto-updating basic converter
-document.getElementById('conv-amount').addEventListener('input', calculateConversion);
-document.getElementById('conv-from').addEventListener('change', calculateConversion);
-document.getElementById('conv-to').addEventListener('change', calculateConversion);
 
 // Initialize App
 fetchRates();
-
-// Register Service Worker for PWA
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').then(() => {
-        console.log('Service Worker Registered');
-    });
-}
